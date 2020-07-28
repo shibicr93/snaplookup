@@ -1,113 +1,100 @@
 <!DOCTYPE html>
-<!--
-    Copyright (c) 2012-2016 Adobe Systems Incorporated. All rights reserved.
-
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-     KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
--->
 <html>
+  <head>
+  </head>
+  <body onload="init();">
+    <h1>Take a snapshot of the current video stream</h1>
+   Click on the Start WebCam button.
+     <p>
+    <button onclick="startWebcam();">Start WebCam</button>
+    <button onclick="stopWebcam();">Stop WebCam</button> 
+       <button onclick="snapshot();">Take Snapshot</button> 
+    </p>
+    <video onclick="snapshot(this);" width=400 height=400 id="video" controls autoplay></video>
+  <p>
 
-<head>
-    <meta charset="utf-8" />
-    <meta name="format-detection" content="telephone=no" />
-    <meta name="msapplication-tap-highlight" content="no" />
-    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width" />
-    <!-- This is a wide open CSP declaration. To lock this down for production, see below. -->
-    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *" />
-    <!-- Good default declaration:
-    * gap: is required only on iOS (when using UIWebView) and is needed for JS->native communication
-    * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
-    * Disables use of eval() and inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
-        * Enable inline JS: add 'unsafe-inline' to default-src
-        * Enable eval(): add 'unsafe-eval' to default-src
-    * Create your own at http://cspisawesome.com
-    -->
-    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: 'unsafe-inline' https://ssl.gstatic.com; style-src 'self' 'unsafe-inline'; media-src *" /> -->
+        Screenshots : <p>
+      <canvas  id="myCanvas" width="400" height="350"></canvas>  
+     
+  </body>
+  <script>
 
-    <link rel="stylesheet" type="text/css" href="css/index.css" />
-    <title>Hello World</title>
-</head>
 
-<body>
-    <div class="app">
-        <h1>PhoneGap</h1>
-        <div id="deviceready" class="blink">
-            <p class="event listening">Connecting to Device</p>
-            <p class="event received">Device is Ready</p>
-        </div>
-                <input type="file" accept="image/*" capture>
-<canvas></canvas>
-<script type="text/javascript">
-        var input = document.querySelector('input[type=file]'); // see Example 4
-
-input.onchange = function () {
-  var file = input.files[0];
-
-  upload(file);
-  drawOnCanvas(file);   // see Example 6
-  displayAsImage(file); // see Example 7
+const todo = {
+    title: 'Some really important work to finish'
 };
 
-function upload(file) {
-  var form = new FormData(),
-      xhr = new XMLHttpRequest();
+fetch('https://jsonplaceholder.typicode.com/todos', {
+        method: 'POST',
+        body: JSON.stringify(todo),
+        headers: {
+            'Content-type': 'application/json; charset=UTF-8'
+        }
+    })
+    .then(response => response.json())
+    .then(json => {
+        console.log(json);
+    });
 
-  form.append('image', file);
-  xhr.open('post', 'server.php', true);
-  xhr.send(form);
-}
-function drawOnCanvas(file) {
-  var reader = new FileReader();
 
-  reader.onload = function (e) {
-    var dataURL = e.target.result,
-        c = document.querySelector('canvas'), // see Example 4
-        ctx = c.getContext('2d'),
-        img = new Image();
+      //--------------------
+      // GET USER MEDIA CODE
+      //--------------------
+          navigator.getUserMedia = ( navigator.getUserMedia ||
+                             navigator.webkitGetUserMedia ||
+                             navigator.mozGetUserMedia ||
+                             navigator.msGetUserMedia);
 
-    img.onload = function() {
-      c.width = img.width;
-      c.height = img.height;
-      ctx.drawImage(img, 0, 0);
-    };
+      var video;
+      var webcamStream;
 
-    img.src = dataURL;
-  };
+      function startWebcam() {
+        if (navigator.getUserMedia) {
+           navigator.getUserMedia (
 
-  reader.readAsDataURL(file);
-}
-function displayAsImage(file) {
-  var imgURL = URL.createObjectURL(file),
-      img = document.createElement('img');
+              // constraints
+              {
+                 video: true,
+                 audio: false
+              },
 
-  img.onload = function() {
-    URL.revokeObjectURL(imgURL);
-  };
+              // successCallback
+              function(localMediaStream) {
+                  video = document.querySelector('video');
+                 video.srcObject = localMediaStream; 
+                 webcamStream = localMediaStream;
+              },
 
-  img.src = imgURL;
-  document.body.appendChild(img);
-}
-    </script>
-    </div>
-    <script type="text/javascript" src="cordova.js"></script>
-    <script type="text/javascript" src="js/index.js"></script>
-    <script type="text/javascript">
-        app.initialize();
-    </script>
-</body>
+              // errorCallback
+              function(err) {
+                 console.log("The following error occured: " + err);
+              }
+           );
+        } else {
+           console.log("getUserMedia not supported");
+        }  
+      }
 
+      function stopWebcam() {
+          webcamStream.stop();
+      }
+      //---------------------
+      // TAKE A SNAPSHOT CODE
+      //---------------------
+      var canvas, ctx;
+
+      function init() {
+        // Get the canvas and obtain a context for
+        // drawing in it
+        canvas = document.getElementById("myCanvas");
+        ctx = canvas.getContext('2d');
+      }
+
+      function snapshot() {
+         // Draws current image from the video element into the canvas
+        ctx.drawImage(video, 0,0, canvas.width, canvas.height);
+        var Pic = document.getElementById("myCanvas").toDataURL("image/png");
+      }
+
+  </script>
 </html>
